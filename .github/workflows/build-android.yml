@@ -1,0 +1,32 @@
+name: Android APK ビルド
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v4
+
+      - name: Node.js セットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: EAS CLI セットアップ
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 依存関係インストール
+        run: npm install
+
+      - name: Android APK ビルド
+        run: eas build --platform android --profile preview --non-interactive
+
+      - name: ビルドURL表示
+        run: echo "✅ ビルド完了！ https://expo.dev/accounts/ でAPKをダウンロードしてください"
