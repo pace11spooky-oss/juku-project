@@ -60,28 +60,21 @@ async function parseUrl(url) {
   };
 }
 
-// ===================== サイトスキャン (複数件) =====================
+// ===================== サイトスキャン (複数件 + ページネーション対応) =====================
 const RECIPE_URL_PATTERNS = [
-  /\/recipe[s]?\/\d+/i,                         // /recipe/12345
-  /\/recipe[s]?\/[a-z0-9_-]{4,}/i,              // /recipes/abc-def
-  /\/dish\/\d+/i,                                // /dish/123
-  /\/cooking\/\d+/i,                             // /cooking/123
-  /\/menu\/\d+/i,                                // /menu/123
-  /\/food\/\d+/i,                                // /food/123
-  /\/detail\/\d+/i,                              // /detail/123
-  /\/[a-z0-9-]+\/\d{5,}/i,                       // /something/123456
+  /\/recipe[s]?\/\d+/i,
+  /\/recipe[s]?\/[a-z0-9_-]{4,}/i,
+  /\/dish\/\d+/i,
+  /\/cooking\/\d+/i,
+  /\/menu\/\d+/i,
+  /\/food\/\d+/i,
+  /\/detail\/\d+/i,
+  /\/[a-z0-9-]+\/\d{5,}/i,
 ];
 const SKIP_PATTERNS = /\/(login|signup|register|about|contact|help|terms|privacy|policy|search|tag[s]?|category|categories|user[s]?|account|cart|shop|purchase|mypage|ranking|feature|series|column|news|article|blog|faq|guide)\b/i;
 
-async function scanSiteForRecipes(pageUrl) {
-  let base;
-  try { base = new URL(pageUrl); } catch { throw new Error('無効なURLです'); }
-
-  const res = await fetch(pageUrl, { headers: { 'User-Agent': UA } });
-  if (!res.ok) throw new Error(`取得失敗 (HTTP ${res.status})`);
-  const html = await res.text();
-
-  // ページ内の全リンクを抽出
+// ページからレシピURLを抽出
+function extractRecipeUrls(html, base, currentUrl) {
   const hrefs = new Set();
   const re = /href=["']([^"'\s>]+)["']/gi;
   let m;
@@ -89,26 +82,93 @@ async function scanSiteForRecipes(pageUrl) {
     const h = m[1];
     if (h.startsWith('#') || h.startsWith('javascript:') || h.startsWith('mailto:')) continue;
     try {
-      const abs = h.startsWith('http') ? h : `${base.protocol}//${base.host}${h.startsWith('/') ? h : '/' + h}`;
+      const abs = h.startsWith('http') ? h : `${base.origin}${h.startsWith('/') ? h : '/' + h}`;
       const u = new URL(abs);
-      // 同じホストのみ
       if (u.host === base.host) hrefs.add(u.origin + u.pathname);
     } catch {}
   }
-
-  // レシピURLをフィルタ
-  const recipeUrls = [...hrefs].filter(u =>
-    RECIPE_URL_PATTERNS.some(p => p.test(u)) && !SKIP_PATTERNS.test(u) && u !== pageUrl
+  return [...hrefs].filter(u =>
+    RECIPE_URL_PATTERNS.some(p => p.test(u)) && !SKIP_PATTERNS.test(u) && u !== currentUrl
   );
+}
 
-  // パターンマッチなしの場合は内部リンク全般から候補を探す
-  if (recipeUrls.length === 0) {
-    const fallback = [...hrefs].filter(u => !SKIP_PATTERNS.test(u) && u !== pageUrl);
-    if (fallback.length === 0) throw new Error('レシピリンクが見つかりませんでした。\nJavaScriptで描画されるサイトは対応していません。');
-    return fallback.slice(0, 30);
+// 次ページURLを検出
+function findNextPage(html, base, currentUrl) {
+  // rel="next" タグ
+  const relNext = html.match(/(?:href=["']([^"']+)["'][^>]*rel=["']next["']|rel=["']next["'][^>]*href=["']([^"']+)["'])/i);
+  if (relNext) {
+    const href = relNext[1] || relNext[2];
+    try {
+      const u = new URL(href.startsWith('http') ? href : `${base.origin}${href}`);
+      if (u.host === base.host) return u.href;
+    } catch {}
+  }
+  try {
+    const cur = new URL(currentUrl);
+    // ?page=N パラメータ
+    for (const param of ['page', 'p', 'pg']) {
+      if (cur.searchParams.has(param)) {
+        const n = parseInt(cur.searchParams.get(param)) || 1;
+        if (html.includes(`${param}=${n + 1}`) || html.includes(`/page/${n + 1}`)) {
+          const next = new URL(currentUrl);
+          next.searchParams.set(param, n + 1);
+          return next.href;
+        }
+      }
+    }
+    // /page/N パターン
+    const ppMatch = cur.pathname.match(/\/page\/(\d+)/);
+    if (ppMatch) {
+      const n = parseInt(ppMatch[1]);
+      if (html.includes(`/page/${n + 1}`)) {
+        return cur.origin + cur.pathname.replace(/\/page\/\d+/, `/page/${n + 1}`) + cur.search;
+      }
+    }
+    // 初回ページで page=2 / /page/2 のリンクがあれば追跡開始
+    if (!cur.searchParams.has('page') && !cur.pathname.includes('/page/')) {
+      if (html.includes('/page/2')) return cur.origin + cur.pathname.replace(/\/?$/, '/page/2');
+      if (html.includes('page=2')) { const nx = new URL(currentUrl); nx.searchParams.set('page', '2'); return nx.href; }
+    }
+  } catch {}
+  return null;
+}
+
+// メインスキャン関数 (ページネーション自動追跡)
+async function scanSiteForRecipes(startUrl, onProgress) {
+  const MAX_PAGES = 8, MAX_RECIPES = 80;
+  let base;
+  try { base = new URL(startUrl); } catch { throw new Error('無効なURLです'); }
+
+  const allRecipes = new Set();
+  const visitedPages = new Set();
+  const pageQueue = [startUrl];
+
+  while (pageQueue.length > 0 && visitedPages.size < MAX_PAGES && allRecipes.size < MAX_RECIPES) {
+    const pageUrl = pageQueue.shift();
+    if (visitedPages.has(pageUrl)) continue;
+    visitedPages.add(pageUrl);
+
+    onProgress?.({ page: visitedPages.size, recipes: allRecipes.size, url: pageUrl });
+
+    let html;
+    try {
+      const res = await fetch(pageUrl, { headers: { 'User-Agent': UA } });
+      if (!res.ok) continue;
+      html = await res.text();
+    } catch { continue; }
+
+    extractRecipeUrls(html, base, pageUrl).forEach(u => allRecipes.add(u));
+
+    const next = findNextPage(html, base, pageUrl);
+    if (next && !visitedPages.has(next)) pageQueue.unshift(next); // 次ページ優先
+
+    if (pageQueue.length > 0) await new Promise(r => setTimeout(r, 400));
   }
 
-  return [...new Set(recipeUrls)].slice(0, 30);
+  if (allRecipes.size === 0)
+    throw new Error('レシピリンクが見つかりませんでした。\nJavaScriptで描画されるサイトは対応していません。');
+
+  return { urls: [...allRecipes].slice(0, MAX_RECIPES), pages: visitedPages.size };
 }
 
 // ===================== Claude API =====================
@@ -158,15 +218,17 @@ export default function App() {
   const [fetchErr, setFetchErr]     = useState('');
 
   // 一括取得
-  const [bulkMode, setBulkMode]         = useState(false);
-  const [bulkUrl, setBulkUrl]           = useState('');
-  const [scanning, setScanning]         = useState(false);
-  const [scanErr, setScanErr]           = useState('');
-  const [foundUrls, setFoundUrls]       = useState([]);
-  const [selected, setSelected]         = useState({});
-  const [importing, setImporting]       = useState(false);
+  const [bulkMode, setBulkMode]             = useState(false);
+  const [bulkUrl, setBulkUrl]               = useState('');
+  const [scanning, setScanning]             = useState(false);
+  const [scanProgress, setScanProgress]     = useState({ page: 0, recipes: 0, url: '' });
+  const [scanErr, setScanErr]               = useState('');
+  const [foundUrls, setFoundUrls]           = useState([]);
+  const [scannedPages, setScannedPages]     = useState(0);
+  const [selected, setSelected]             = useState({});
+  const [importing, setImporting]           = useState(false);
   const [importProgress, setImportProgress] = useState({ done: 0, total: 0 });
-  const [importDone, setImportDone]     = useState(false);
+  const [importDone, setImportDone]         = useState(false);
   const cancelRef = useRef(false);
 
   // AI
@@ -207,10 +269,12 @@ export default function App() {
 
   // ---- 一括取得 ----
   const onScanSite = async () => {
-    setScanning(true); setScanErr(''); setFoundUrls([]); setSelected({}); setImportDone(false);
+    setScanning(true); setScanErr(''); setFoundUrls([]); setSelected({});
+    setImportDone(false); setScanProgress({ page: 0, recipes: 0, url: '' });
     try {
-      const urls = await scanSiteForRecipes(bulkUrl.trim());
+      const { urls, pages } = await scanSiteForRecipes(bulkUrl.trim(), (p) => setScanProgress(p));
       setFoundUrls(urls);
+      setScannedPages(pages);
       const sel = {};
       urls.forEach(u => sel[u] = true);
       setSelected(sel);
@@ -428,19 +492,30 @@ export default function App() {
         <>
           <View style={s.card}>
             <Text style={s.label}>レシピ一覧ページのURLを入力</Text>
-            <Text style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>カテゴリページ・ユーザーページ・検索結果など</Text>
+            <Text style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>
+              ホームページ・カテゴリページ・ユーザーページなど{'\n'}次ページも自動で追跡します（最大8ページ・80件）
+            </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <TextInput style={[s.input, { flex: 1, marginRight: 8, marginBottom: 0 }]}
-                placeholder="https://cookpad.com/category/..." value={bulkUrl} onChangeText={setBulkUrl}
+                placeholder="https://cookpad.com/kitchen/12345" value={bulkUrl} onChangeText={setBulkUrl}
                 autoCapitalize="none" keyboardType="url" />
               <TouchableOpacity style={s.fetchBtn} onPress={onScanSite} disabled={scanning}>
                 <Text style={{ color: '#fff', fontWeight: '700' }}>スキャン</Text>
               </TouchableOpacity>
             </View>
             {scanning && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
-                <ActivityIndicator color={C.accent} />
-                <Text style={{ marginLeft: 8, color: C.muted, fontSize: 13 }}>ページをスキャン中...</Text>
+              <View style={{ marginTop: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                  <ActivityIndicator color={C.accent} />
+                  <Text style={{ marginLeft: 8, color: C.muted, fontSize: 13 }}>
+                    ページ {scanProgress.page} をスキャン中... ({scanProgress.recipes}件発見)
+                  </Text>
+                </View>
+                {scanProgress.url ? (
+                  <Text style={{ fontSize: 11, color: C.muted }} numberOfLines={1}>
+                    {scanProgress.url.replace(/https?:\/\/[^/]+/, '')}
+                  </Text>
+                ) : null}
               </View>
             )}
             {scanErr ? <Text style={s.errText}>{scanErr}</Text> : null}
@@ -449,7 +524,9 @@ export default function App() {
           {/* スキャン結果 */}
           {foundUrls.length > 0 && !importing && !importDone && (
             <View style={s.card}>
-              <Text style={s.label}>{foundUrls.length}件のレシピが見つかりました</Text>
+              <Text style={s.label}>
+                🎯 {foundUrls.length}件のレシピが見つかりました（{scannedPages}ページ分）
+              </Text>
               <View style={{ flexDirection: 'row', marginBottom: 12 }}>
                 <TouchableOpacity onPress={selectAll} style={[s.smallBtn, { marginRight: 8 }]}>
                   <Text style={s.smallBtnText}>全て選択</Text>
