@@ -23,19 +23,19 @@ export interface WeeklyPlan {
 }
 
 export const DAY_LABELS: Record<DayOfWeek, string> = {
-  mon: '月',
-  tue: '火',
-  wed: '水',
-  thu: '木',
-  fri: '金',
-  sat: '土',
-  sun: '日',
+  mon: 'T2',
+  tue: 'T3',
+  wed: 'T4',
+  thu: 'T5',
+  fri: 'T6',
+  sat: 'T7',
+  sun: 'CN',
 };
 
 export const MEAL_LABELS: Record<MealType, string> = {
-  breakfast: '🌅 朝食',
-  lunch: '🌞 昼食',
-  dinner: '🌙 夕食',
+  breakfast: '🌅 Sáng',
+  lunch: '🌞 Trưa',
+  dinner: '🌙 Tối',
 };
 
 export const DAYS_OF_WEEK: DayOfWeek[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];

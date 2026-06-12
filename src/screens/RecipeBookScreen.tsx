@@ -33,10 +33,10 @@ export default function RecipeBookScreen() {
   );
 
   function handleLongPress(recipe: Recipe) {
-    Alert.alert(recipe.title, 'このレシピを削除しますか？', [
-      { text: 'キャンセル', style: 'cancel' },
+    Alert.alert(recipe.title, 'Bạn có muốn xóa công thức này không?', [
+      { text: 'Hủy', style: 'cancel' },
       {
-        text: '削除',
+        text: 'Xóa',
         style: 'destructive',
         onPress: () => deleteRecipe(recipe.id),
       },
@@ -47,13 +47,13 @@ export default function RecipeBookScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>📖 レシピ帳</Text>
+        <Text style={styles.headerTitle}>📖 Sổ công thức</Text>
         <TouchableOpacity
           style={styles.addBtn}
           onPress={() => navigation.navigate('AddRecipe')}
           activeOpacity={0.8}
         >
-          <Text style={styles.addBtnText}>＋ 追加</Text>
+          <Text style={styles.addBtnText}>＋ Thêm</Text>
         </TouchableOpacity>
       </View>
 
@@ -61,7 +61,7 @@ export default function RecipeBookScreen() {
       <View style={styles.searchWrapper}>
         <TextInput
           style={styles.searchInput}
-          placeholder="🔍 レシピを検索…"
+          placeholder="🔍 Tìm công thức…"
           placeholderTextColor="#B0A090"
           value={search}
           onChangeText={setSearch}
@@ -73,21 +73,21 @@ export default function RecipeBookScreen() {
       {recipes.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyEmoji}>🍳</Text>
-          <Text style={styles.emptyTitle}>レシピがまだありません</Text>
+          <Text style={styles.emptyTitle}>Chưa có công thức nào</Text>
           <Text style={styles.emptySubText}>
-            料理サイトのURLを貼り付けてレシピを登録しましょう
+            Dán URL trang nấu ăn để thêm công thức vào đây
           </Text>
           <TouchableOpacity
             style={styles.emptyAddBtn}
             onPress={() => navigation.navigate('AddRecipe')}
           >
-            <Text style={styles.emptyAddBtnText}>レシピを追加する</Text>
+            <Text style={styles.emptyAddBtnText}>Thêm công thức</Text>
           </TouchableOpacity>
         </View>
       ) : filtered.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyTitle}>
-            「{search}」に一致するレシピがありません
+            Không tìm thấy công thức nào khớp với "{search}"
           </Text>
         </View>
       ) : (
@@ -104,7 +104,7 @@ export default function RecipeBookScreen() {
           )}
           ListFooterComponent={
             <Text style={styles.footer}>
-              長押しでレシピを削除できます
+              Nhấn giữ để xóa công thức
             </Text>
           }
         />

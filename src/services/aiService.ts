@@ -7,7 +7,7 @@ function getClient(): Anthropic {
   const apiKey = process.env.EXPO_PUBLIC_CLAUDE_API_KEY;
   if (!apiKey) {
     throw new Error(
-      'EXPO_PUBLIC_CLAUDE_API_KEY が設定されていません。.env ファイルを確認してください。'
+      'EXPO_PUBLIC_CLAUDE_API_KEY chưa được thiết lập. Vui lòng kiểm tra file .env.'
     );
   }
   return new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
@@ -17,11 +17,11 @@ function buildRecipeSummary(recipes: Recipe[]): string {
   return recipes
     .map(
       (r, i) =>
-        `${i + 1}. ID: ${r.id}\n   タイトル: ${r.title}${
-          r.description ? `\n   説明: ${r.description.slice(0, 100)}` : ''
+        `${i + 1}. ID: ${r.id}\n   Tiêu đề: ${r.title}${
+          r.description ? `\n   Mô tả: ${r.description.slice(0, 100)}` : ''
         }${
           r.ingredients && r.ingredients.length > 0
-            ? `\n   材料: ${r.ingredients.slice(0, 5).join('、')}${r.ingredients.length > 5 ? '…' : ''}`
+            ? `\n   Nguyên liệu: ${r.ingredients.slice(0, 5).join('、')}${r.ingredients.length > 5 ? '…' : ''}`
             : ''
         }`
     )
@@ -48,40 +48,40 @@ export async function generateWeeklyPlan(
   recipes: Recipe[]
 ): Promise<GeneratedWeeklyPlan> {
   if (recipes.length === 0) {
-    throw new Error('レシピが登録されていません。まずレシピを追加してください。');
+    throw new Error('Chưa có công thức nào. Vui lòng thêm công thức trước.');
   }
 
   const client = getClient();
   const recipeSummary = buildRecipeSummary(recipes);
   const emptyPlanTemplate = buildEmptyPlanJson();
 
-  const systemPrompt = `あなたは栄養バランスを考慮した献立を提案するプロのシェフ兼栄養士です。
-ユーザーが登録したレシピの中から、1週間（月曜〜日曜）の朝食・昼食・夕食を考えます。
+  const systemPrompt = `Bạn là đầu bếp kiêm chuyên gia dinh dưỡng chuyên đề xuất thực đơn cân bằng dinh dưỡng.
+Từ các công thức mà người dùng đã đăng ký, bạn lên kế hoạch bữa sáng, trưa, tối cho 1 tuần (Thứ Hai đến Chủ Nhật).
 
-以下のルールに従って献立を作成してください：
-1. 栄養バランスを考慮し、野菜・タンパク質・炭水化物をバランスよく配置する
-2. 同じレシピが連続しないよう工夫する
-3. 朝食は軽め、夕食はしっかりしたものを選ぶ傾向で
-4. 週末（土・日）は少し特別感のある料理を配置する
-5. 登録レシピ数が少ない場合は、同じレシピを複数日に割り当ててもよい
+Hãy tạo thực đơn theo các quy tắc sau:
+1. Cân bằng dinh dưỡng với rau, protein và tinh bột được phân bổ hợp lý
+2. Tránh lặp cùng một công thức liên tiếp
+3. Bữa sáng nhẹ nhàng, bữa tối đầy đủ hơn
+4. Cuối tuần (Thứ Bảy, Chủ Nhật) chọn món đặc biệt hơn một chút
+5. Nếu ít công thức, có thể gán cùng một công thức cho nhiều ngày
 
-必ず以下のJSON形式で回答してください。JSONブロック以外のテキストは \`comment\` フィールドに含めてください：
+Hãy trả lời theo đúng định dạng JSON sau. Văn bản ngoài khối JSON hãy đưa vào trường \`comment\`:
 
 \`\`\`json
 {
   "plan": ${emptyPlanTemplate},
-  "comment": "献立についての一言コメント（日本語）"
+  "comment": "Nhận xét ngắn về thực đơn (bằng tiếng Việt)"
 }
 \`\`\`
 
-planの各フィールドの値は、必ず提供されたレシピのIDを使用してください。割り当てが難しい場合はnullのままにしてください。`;
+Giá trị của từng trường trong plan phải sử dụng ID công thức được cung cấp. Nếu không thể gán, hãy để null.`;
 
-  const userMessage = `以下のレシピから1週間の献立を作成してください。
+  const userMessage = `Hãy tạo thực đơn 1 tuần từ các công thức sau.
 
-【登録レシピ一覧】
+【Danh sách công thức đã đăng ký】
 ${recipeSummary}
 
-上記のレシピを使って、月曜〜日曜の朝食・昼食・夕食を組み合わせた献立プランをJSON形式で返してください。`;
+Sử dụng các công thức trên để lập kế hoạch bữa sáng, trưa, tối từ Thứ Hai đến Chủ Nhật và trả về dưới dạng JSON.`;
 
   const response = await client.messages.create({
     model: MODEL,
@@ -104,14 +104,14 @@ ${recipeSummary}
     try {
       parsed = JSON.parse(jsonMatch[1]);
     } catch {
-      throw new Error('AIの返答をパースできませんでした。もう一度お試しください。');
+      throw new Error('Không thể phân tích phản hồi từ AI. Vui lòng thử lại.');
     }
   } else {
     // Try parsing entire response as JSON
     try {
       parsed = JSON.parse(rawText);
     } catch {
-      throw new Error('AIから有効なJSONが返されませんでした。もう一度お試しください。');
+      throw new Error('AI không trả về JSON hợp lệ. Vui lòng thử lại.');
     }
   }
 
@@ -132,6 +132,6 @@ ${recipeSummary}
 
   return {
     plan: sanitizedPlan,
-    comment: parsed.comment || 'AIが献立を作成しました。',
+    comment: parsed.comment || 'AI đã tạo thực đơn.',
   };
 }

@@ -39,7 +39,7 @@ export default function AIGenerateScreen() {
       const generated = await generateWeeklyPlan(recipes);
       setResult(generated);
     } catch (err) {
-      setError((err as Error).message || 'AI献立の生成に失敗しました');
+      setError((err as Error).message || 'Không thể tạo thực đơn AI');
     } finally {
       setLoading(false);
     }
@@ -48,8 +48,8 @@ export default function AIGenerateScreen() {
   async function handleApply() {
     if (!result) return;
     await applyGeneratedPlan(result.plan);
-    Alert.alert('適用完了', '今週の献立にAI提案を反映しました！', [
-      { text: 'カレンダーを確認', onPress: () => navigation.goBack() },
+    Alert.alert('Đã áp dụng', 'Đã áp dụng đề xuất AI vào thực đơn tuần này!', [
+      { text: 'Xem lịch', onPress: () => navigation.goBack() },
     ]);
   }
 
@@ -61,22 +61,21 @@ export default function AIGenerateScreen() {
         {/* Intro */}
         <View style={styles.introSection}>
           <Text style={styles.introEmoji}>✨</Text>
-          <Text style={styles.introTitle}>AIが献立を提案します</Text>
+          <Text style={styles.introTitle}>AI gợi ý thực đơn</Text>
           <Text style={styles.introText}>
-            レシピ帳に登録されているレシピから、栄養バランスを考慮した
-            1週間の献立を自動で作成します。
+            Tự động tạo thực đơn 1 tuần cân bằng dinh dưỡng từ các công thức đã đăng ký.
           </Text>
 
           <View style={styles.recipeCount}>
             <Text style={styles.recipeCountText}>
-              📖 登録レシピ数：<Text style={styles.recipeCountNum}>{recipes.length}</Text> 件
+              📖 Số công thức：<Text style={styles.recipeCountNum}>{recipes.length}</Text> món
             </Text>
           </View>
 
           {recipes.length < 3 && (
             <View style={styles.warningBox}>
               <Text style={styles.warningText}>
-                ⚠️ より良い献立のために、レシピを3件以上登録することをおすすめします。
+                ⚠️ Để có thực đơn tốt hơn, nên đăng ký ít nhất 3 công thức.
               </Text>
             </View>
           )}
@@ -96,18 +95,18 @@ export default function AIGenerateScreen() {
             {loading ? (
               <View style={styles.loadingRow}>
                 <ActivityIndicator color="#FFFFFF" size="small" />
-                <Text style={styles.generateBtnText}>  考え中…</Text>
+                <Text style={styles.generateBtnText}>  Đang nghĩ…</Text>
               </View>
             ) : (
               <Text style={styles.generateBtnText}>
-                {result ? '🔄 もう一度生成' : '🤖 AI献立を生成'}
+                {result ? '🔄 Tạo lại' : '🤖 Tạo thực đơn AI'}
               </Text>
             )}
           </TouchableOpacity>
 
           {recipes.length === 0 && (
             <Text style={styles.noRecipeHint}>
-              レシピ帳にレシピを追加してから使用できます
+              Cần thêm công thức vào sổ trước khi sử dụng
             </Text>
           )}
         </View>
@@ -129,7 +128,7 @@ export default function AIGenerateScreen() {
             </View>
 
             {/* Weekly Plan Table */}
-            <Text style={styles.planTitle}>提案された献立</Text>
+            <Text style={styles.planTitle}>Thực đơn được đề xuất</Text>
             {DAYS_OF_WEEK.map((day: DayOfWeek) => (
               <View key={day} style={styles.dayRow}>
                 <View
@@ -165,7 +164,7 @@ export default function AIGenerateScreen() {
                           ]}
                           numberOfLines={1}
                         >
-                          {recipe ? recipe.title : '未割当'}
+                          {recipe ? recipe.title : 'Chưa gán'}
                         </Text>
                       </View>
                     );
@@ -181,7 +180,7 @@ export default function AIGenerateScreen() {
               activeOpacity={0.85}
             >
               <Text style={styles.applyBtnText}>
-                📅 この献立を今週に適用
+                📅 Áp dụng thực đơn này cho tuần này
               </Text>
             </TouchableOpacity>
           </View>

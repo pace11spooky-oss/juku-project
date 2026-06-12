@@ -37,7 +37,7 @@ export default function AddRecipeScreen() {
       const recipe = await parseRecipeFromUrl(url.trim());
       setPreview(recipe);
     } catch (err) {
-      setError((err as Error).message || 'レシピの取得に失敗しました');
+      setError((err as Error).message || 'Không thể lấy công thức');
     } finally {
       setLoading(false);
     }
@@ -46,7 +46,7 @@ export default function AddRecipeScreen() {
   async function handleSave() {
     if (!preview) return;
     await addRecipe(preview);
-    Alert.alert('保存完了', `「${preview.title}」をレシピ帳に追加しました！`, [
+    Alert.alert('Đã lưu', `Đã thêm "${preview.title}" vào sổ công thức!`, [
       { text: 'OK', onPress: () => navigation.goBack() },
     ]);
   }
@@ -63,10 +63,9 @@ export default function AddRecipeScreen() {
         >
           {/* URL Input Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>料理サイトのURLを入力</Text>
+            <Text style={styles.sectionTitle}>Nhập URL trang nấu ăn</Text>
             <Text style={styles.sectionSubText}>
-              クックパッド・楽天レシピ・クラシルなど、
-              レシピページのURLに対応しています
+              Hỗ trợ URL trang công thức như Cookpad, Rakuten Recipe, Kurashiru, v.v.
             </Text>
 
             <View style={styles.inputRow}>
@@ -97,7 +96,7 @@ export default function AddRecipeScreen() {
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
-                <Text style={styles.fetchBtnText}>🔍 レシピを取得</Text>
+                <Text style={styles.fetchBtnText}>🔍 Lấy công thức</Text>
               )}
             </TouchableOpacity>
 
@@ -111,7 +110,7 @@ export default function AddRecipeScreen() {
           {/* Preview Section */}
           {preview ? (
             <View style={styles.previewSection}>
-              <Text style={styles.previewLabel}>取得結果</Text>
+              <Text style={styles.previewLabel}>Kết quả</Text>
               <View style={styles.previewCard}>
                 {preview.image ? (
                   <Image
@@ -150,7 +149,7 @@ export default function AddRecipeScreen() {
                     {preview.ingredients && preview.ingredients.length > 0 ? (
                       <View style={styles.metaChip}>
                         <Text style={styles.metaChipText}>
-                          🥕 材料 {preview.ingredients.length}種
+                          🥕 {preview.ingredients.length} nguyên liệu
                         </Text>
                       </View>
                     ) : null}
@@ -158,7 +157,7 @@ export default function AddRecipeScreen() {
 
                   {preview.ingredients && preview.ingredients.length > 0 ? (
                     <View style={styles.ingredientsBox}>
-                      <Text style={styles.ingredientsTitle}>材料</Text>
+                      <Text style={styles.ingredientsTitle}>Nguyên liệu</Text>
                       <Text style={styles.ingredientsText}>
                         {preview.ingredients.slice(0, 8).join('、')}
                         {preview.ingredients.length > 8 ? '…' : ''}
@@ -173,7 +172,7 @@ export default function AddRecipeScreen() {
                 onPress={handleSave}
                 activeOpacity={0.85}
               >
-                <Text style={styles.saveBtnText}>✅ レシピ帳に保存</Text>
+                <Text style={styles.saveBtnText}>✅ Lưu vào sổ công thức</Text>
               </TouchableOpacity>
             </View>
           ) : null}
@@ -181,13 +180,13 @@ export default function AddRecipeScreen() {
           {/* Tips */}
           {!preview && !loading && (
             <View style={styles.tips}>
-              <Text style={styles.tipsTitle}>対応サイト例</Text>
+              <Text style={styles.tipsTitle}>Ví dụ trang hỗ trợ</Text>
               {[
-                { name: 'クックパッド', url: 'cookpad.com' },
-                { name: '楽天レシピ', url: 'recipe.rakuten.co.jp' },
-                { name: 'クラシル', url: 'kurashiru.com' },
-                { name: 'デリッシュキッチン', url: 'delishkitchen.tv' },
-                { name: 'NHKきょうの料理', url: 'nhk.or.jp/cook' },
+                { name: 'Cookpad', url: 'cookpad.com' },
+                { name: 'Rakuten Recipe', url: 'recipe.rakuten.co.jp' },
+                { name: 'Kurashiru', url: 'kurashiru.com' },
+                { name: 'Delish Kitchen', url: 'delishkitchen.tv' },
+                { name: 'NHK Kyou no Ryouri', url: 'nhk.or.jp/cook' },
               ].map((site) => (
                 <View key={site.name} style={styles.tipRow}>
                   <Text style={styles.tipBullet}>•</Text>
@@ -199,8 +198,7 @@ export default function AddRecipeScreen() {
                 </View>
               ))}
               <Text style={styles.tipsNote}>
-                ※ schema.org/Recipe または OGPタグに対応したサイトであれば
-                ほとんどのレシピサイトで動作します
+                ※ Hoạt động với hầu hết các trang công thức hỗ trợ schema.org/Recipe hoặc thẻ OGP
               </Text>
             </View>
           )}

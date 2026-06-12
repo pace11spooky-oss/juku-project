@@ -67,7 +67,7 @@ export default function MealSlotModal({
           <View style={styles.handle} />
           <View style={styles.header}>
             <Text style={styles.headerTitle}>
-              {dayLabel}曜日 {mealLabel}
+              {dayLabel} - {mealLabel}
             </Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Text style={styles.closeBtnText}>✕</Text>
@@ -76,7 +76,7 @@ export default function MealSlotModal({
 
           <TextInput
             style={styles.searchInput}
-            placeholder="レシピを検索…"
+            placeholder="Tìm công thức…"
             placeholderTextColor="#B0A090"
             value={search}
             onChangeText={setSearch}
@@ -87,7 +87,7 @@ export default function MealSlotModal({
               style={styles.clearBtn}
               onPress={() => handleSelect(null)}
             >
-              <Text style={styles.clearBtnText}>🗑 このスロットをクリア</Text>
+              <Text style={styles.clearBtnText}>🗑 Xóa ô này</Text>
             </TouchableOpacity>
           )}
 
@@ -95,13 +95,13 @@ export default function MealSlotModal({
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>📖</Text>
               <Text style={styles.emptyText}>
-                レシピがありません{'\n'}まずレシピを追加してください
+                Chưa có công thức{'\n'}Vui lòng thêm công thức trước
               </Text>
             </View>
           ) : filtered.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyText}>
-                "{search}" に一致するレシピが見つかりません
+                Không tìm thấy công thức khớp với "{search}"
               </Text>
             </View>
           ) : (
