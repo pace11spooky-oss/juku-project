@@ -54,7 +54,7 @@ function MainTabs() {
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarLabel: '献立カレンダー',
+          tabBarLabel: 'Lịch thực đơn',
           tabBarIcon: ({ focused }) => (
             <TabIcon emoji="📅" focused={focused} />
           ),
@@ -64,7 +64,7 @@ function MainTabs() {
         name="RecipeBook"
         component={RecipeBookScreen}
         options={{
-          tabBarLabel: 'レシピ帳',
+          tabBarLabel: 'Sổ công thức',
           tabBarIcon: ({ focused }) => (
             <TabIcon emoji="📖" focused={focused} />
           ),
@@ -100,7 +100,7 @@ export default function AppNavigator() {
           name="AddRecipe"
           component={AddRecipeScreen}
           options={{
-            title: 'レシピを追加',
+            title: 'Thêm công thức',
             presentation: 'modal',
           }}
         />
@@ -108,7 +108,7 @@ export default function AppNavigator() {
           name="AIGenerate"
           component={AIGenerateScreen}
           options={{
-            title: 'AI献立提案',
+            title: 'AI gợi ý thực đơn',
             presentation: 'modal',
           }}
         />

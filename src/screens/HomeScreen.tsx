@@ -43,12 +43,12 @@ export default function HomeScreen() {
 
   function handleClearWeek() {
     Alert.alert(
-      '献立をリセット',
-      '今週の献立をすべてクリアします。よろしいですか？',
+      'Xóa thực đơn',
+      'Xóa tất cả thực đơn tuần này. Bạn có chắc không?',
       [
-        { text: 'キャンセル', style: 'cancel' },
+        { text: 'Hủy', style: 'cancel' },
         {
-          text: 'リセット',
+          text: 'Xóa',
           style: 'destructive',
           onPress: () => clearWeek(),
         },
@@ -68,14 +68,14 @@ export default function HomeScreen() {
   weekEnd.setDate(weekStart.getDate() + 6);
 
   const formatDate = (d: Date) =>
-    `${d.getMonth() + 1}月${d.getDate()}日`;
+    `${d.getDate()}/${d.getMonth() + 1}`;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>🍱 献立カレンダー</Text>
+          <Text style={styles.headerTitle}>🍱 Lịch thực đơn</Text>
           {currentPlan ? (
             <Text style={styles.headerWeek}>
               {formatDate(weekStart)} 〜 {formatDate(weekEnd)}
@@ -87,7 +87,7 @@ export default function HomeScreen() {
           onPress={() => navigation.navigate('AIGenerate')}
           activeOpacity={0.8}
         >
-          <Text style={styles.aiBtnText}>✨ AI提案</Text>
+          <Text style={styles.aiBtnText}>✨ Gợi ý AI</Text>
         </TouchableOpacity>
       </View>
 
@@ -101,17 +101,17 @@ export default function HomeScreen() {
           />
         ) : (
           <View style={styles.loading}>
-            <Text style={styles.loadingText}>読み込み中…</Text>
+            <Text style={styles.loadingText}>Đang tải…</Text>
           </View>
         )}
 
         {/* Legend */}
         <View style={styles.legend}>
           <Text style={styles.legendText}>
-            📌 セルをタップしてレシピを割り当て
+            📌 Nhấn ô để gán công thức
           </Text>
           <TouchableOpacity onPress={handleClearWeek} style={styles.clearBtn}>
-            <Text style={styles.clearBtnText}>🗑 今週をリセット</Text>
+            <Text style={styles.clearBtnText}>🗑 Xóa tuần này</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
